@@ -1,7 +1,6 @@
 package Server;
 
-import sun.plugin2.message.Message;
-
+import Tools.Message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -39,5 +38,5 @@ public class ClientThread extends Thread
         }
     }
 
-    
+
 }
