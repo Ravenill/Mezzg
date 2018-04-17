@@ -4,7 +4,7 @@ import java.io.*;
 
 public class Message implements Serializable
 {
-    static final int WHOISIN = 0, MESSAGE = 1, LOGOUT = 2;
+    public static final int MESSAGE = 0, LOGOUT = 1;
     private int type;
     private String text;
 
@@ -14,12 +14,12 @@ public class Message implements Serializable
         this.text = text;
     }
 
-    int getType()
+    public int getType()
     {
         return type;
     }
 
-    String getText()
+    public String getText()
     {
         return text;
     }
