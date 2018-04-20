@@ -1,6 +1,7 @@
 package Client;
 
 import Tools.Message;
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -8,25 +9,49 @@ import java.util.*;
 public class Client
 {
     private static final int PORT = 4021;
-    private static final String SERVERNAME = "localhost";
+    private static final String SERVER_NAME = "localhost";
     private static final String USERNAME = "Anon";
 
     private ObjectInputStream input;
     private ObjectOutputStream output;
     private Socket socket;
+    private ListenFromServer listener;
 
     private String server;
     private String username;
     private int port;
 
-    Client ()
+    public Client()
     {
-        this.server = SERVERNAME;
+        this.server = SERVER_NAME;
         this.port = PORT;
         this.username = USERNAME;
     }
 
-    public boolean start()
+    public Client(String username)
+    {
+        this.server = SERVER_NAME;
+        this.port = PORT;
+        this.username = username;
+    }
+
+    public boolean createClient()
+    {
+        if (!connectToServer())
+            return false;
+
+        if (!openStreams())
+            return false;
+
+        createServerListener();
+
+        if (!sendUsernameToServer())
+            return false;
+
+        return true;
+    }
+
+    private boolean connectToServer()
     {
         try
         {
@@ -38,10 +63,13 @@ public class Client
             return false;
         }
 
-        String msg = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
-        System.out.println(msg);
+        String info = "Connection accepted " + socket.getInetAddress() + ":" + socket.getPort();
+        System.out.println(info);
+        return true;
+    }
 
-        /* Creating both Data Stream */
+    private boolean openStreams()
+    {
         try
         {
             input = new ObjectInputStream(socket.getInputStream());
@@ -53,8 +81,17 @@ public class Client
             return false;
         }
 
-        new ListenFromServer().start();
+        return true;
+    }
 
+    private void createServerListener()
+    {
+        listener = new ListenFromServer();
+        listener.start();
+    }
+
+    private boolean sendUsernameToServer()
+    {
         try
         {
             output.writeObject(username);
@@ -65,61 +102,24 @@ public class Client
             disconnect();
             return false;
         }
-        // success we inform the caller that it worked
+
         return true;
     }
 
-    /*
-     * To send a message to the server
-     */
-    void sendMessage(Message msg)
+    private void sendMessage(Message msg)
     {
         try
         {
             output.writeObject(msg);
         }
-        catch (IOException e)
+        catch (IOException error)
         {
-            System.out.println("Exception writing to server: " + e);
+            System.out.println("Exception writing to server: " + error);
         }
     }
 
-    /*
-     * When something goes wrong
-     * Close the Input/Output streams and disconnect not much to do in the catch clause
-     */
-    private void disconnect()
+    public void run()
     {
-        try
-        {
-            if (input != null) input.close();
-        }
-        catch (Exception e)
-        {
-        } // not much else I can do
-        try
-        {
-            if (output != null) output.close();
-        }
-        catch (Exception e)
-        {
-        } // not much else I can do
-        try
-        {
-            if (socket != null) socket.close();
-        }
-        catch (Exception e)
-        {
-        } // not much else I can do
-    }
-
-    public static void main(String[] args)
-    {
-
-        Client client = new Client();
-        if (!client.start())
-            return;
-
         Scanner scan = new Scanner(System.in);
         while (true)
         {
@@ -127,19 +127,47 @@ public class Client
             String msg = scan.nextLine();
             if (msg.equalsIgnoreCase("LOGOUT"))
             {
-                client.sendMessage(new Message(Message.LOGOUT, ""));
+                sendMessage(new Message(Message.LOGOUT, ""));
                 break;
             }
             else
             {
-                client.sendMessage(new Message(Message.MESSAGE, msg));
+                sendMessage(new Message(Message.MESSAGE, msg));
             }
         }
-        client.disconnect();
+    }
+
+    public void disconnect()
+    {
+        try
+        {
+            if (input != null) input.close();
+        }
+        catch (Exception error)
+        {
+            System.out.println("Exception while closing input: " + error);
+        }
+        try
+        {
+            if (output != null) output.close();
+        }
+        catch (Exception error)
+        {
+            System.out.println("Exception while closing output: " + error);
+        }
+        try
+        {
+            if (socket != null) socket.close();
+        }
+        catch (Exception error)
+        {
+            System.out.println("Exception while closing socket: " + error);
+        }
     }
 
     class ListenFromServer extends Thread
     {
+        @Override
         public void run()
         {
             while (true)
@@ -150,13 +178,14 @@ public class Client
                     System.out.println(msg);
                     System.out.print("> ");
                 }
-                catch (IOException e)
+                catch (IOException error)
                 {
-                    System.out.println("Server has close the connection: " + e);
+                    System.out.println("Server has close the connection: " + error);
                     break;
                 }
-                catch (ClassNotFoundException e2)
+                catch (ClassNotFoundException error)
                 {
+                    System.out.println("Cannot read the message: " + error);
                 }
             }
         }

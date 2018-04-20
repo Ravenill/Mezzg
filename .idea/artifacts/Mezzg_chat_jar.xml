@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Mezzg_chat:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Mezzg_chat_jar</output-path>
+    <root id="archive" name="Mezzg_chat.jar">
+      <element id="module-output" name="Mezzg_chat" />
+    </root>
+  </artifact>
+</component>

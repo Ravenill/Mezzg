@@ -1,6 +1,7 @@
 package Server;
 
 import Tools.Message;
+import Tools.MsgDAO;
 
 import java.io.*;
 import java.net.*;
@@ -16,6 +17,8 @@ public class Server
     private SimpleDateFormat date;
     private int port;
 
+    private MsgDAO msgDAO;
+
     private boolean run;
 
     public Server()
@@ -24,6 +27,7 @@ public class Server
         date = new SimpleDateFormat("HH:mm:ss");
         port = PORT;
         run = false;
+        msgDAO = new MsgDAO();
     }
 
     public void start()
@@ -86,15 +90,17 @@ public class Server
         }
     }
 
-    private synchronized void sendToAllClients(String msg)
+    private synchronized void sendToAllClients(String user, String msg)
     {
         String time = date.format(new Date());
-        String msg_to_send = "[" + time + "] " + msg + "\n";
+        String msg_to_send = "[" + time + "] " + user + ": " + msg + "\n";
 
         System.out.println(msg_to_send);
 
+        msgDAO.save(user, time, msg);
+
         //reverse, coz someone can DC
-        for (int i = clientThreadList.size(); i >= 0; i--)
+        for (int i = clientThreadList.size() - 1; i >= 0; i--)
         {
             ClientThread client = clientThreadList.get(i);
             if (client.isActive())
@@ -184,7 +190,7 @@ public class Server
             switch (message.getType())
             {
                 case Message.MESSAGE:
-                    sendToAllClients(text);
+                    sendToAllClients(userName, text);
                     break;
                 case Message.LOGOUT:
                     System.out.println(userName + " disconnected.\n");
